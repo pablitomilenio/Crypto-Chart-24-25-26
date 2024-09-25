@@ -1,15 +1,16 @@
 // Leverage factor, default is 4x
 const leverage = 4;
 
+// Define the start and end dates for filtering
+const startDate = '01/01/2021'; // MM/DD/YYYY
+const endDate = '05/31/2021';   // MM/DD/YYYY
+
 // Function to read and parse the CSV file
 function readCSV(callback) {
-    // Create a new XMLHttpRequest object
     var xhr = new XMLHttpRequest();
-    // Configure it: GET-request for the URL /solana.csv
     xhr.open('GET', 'solana.csv', true);
     xhr.onreadystatechange = function () {
         if (xhr.readyState === 4 && (xhr.status === 200 || xhr.status == 0)) {
-            // Call the callback function with the response text
             callback(xhr.responseText);
         }
     };
@@ -22,14 +23,30 @@ function parseCSV(csv) {
     const headers = lines[0].split(',');
     const data = [];
 
+    // Convert start and end dates to Date objects
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
     for (let i = 1; i < lines.length; i++) {
         const obj = {};
         const currentLine = lines[i].split(',');
 
+        // Skip lines that don't have the correct number of columns
+        if (currentLine.length !== headers.length) {
+            continue;
+        }
+
         for (let j = 0; j < headers.length; j++) {
             obj[headers[j]] = currentLine[j];
         }
-        data.push(obj);
+
+        // Parse the date from the current line
+        const currentDate = new Date(obj.Date);
+
+        // Check if the current date is within the desired range
+        if (currentDate >= start && currentDate <= end) {
+            data.push(obj);
+        }
     }
     return data;
 }
@@ -95,7 +112,7 @@ function renderChart(data) {
                         parser: 'MM/DD/YYYY',
                         unit: 'day',
                         displayFormats: {
-                            day: 'MMM DD'
+                            day: 'MMM DD YYYY'
                         }
                     },
                     title: {
