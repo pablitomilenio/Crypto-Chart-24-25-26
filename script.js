@@ -61,17 +61,69 @@ function renderChart(data) {
     dates.reverse();
     closes.reverse();
 
-    // Calculate the number of units shorted at the initial price
+    // Initialize variables
     const initialCash = 240000; // Initial portfolio value
-    const initialPrice = closes[0]; // Initial close price
-    const numUnits = (initialCash / initialPrice) * leverage;
+    let cash = initialCash; // Current cash position
+    let invested = true; // Whether we currently hold a position
+    let entryPrice = closes[0]; // Price at which the position was entered
+    let numUnits = (cash / entryPrice) * leverage; // Number of units shorted
+    let maxPrice = entryPrice; // Maximum price observed since entry
+    const portfolioValues = []; // Array to hold portfolio values
+    const investmentStatus = []; // Array to hold investment status (true/false)
 
-    // Calculate portfolio values over time
-    const portfolioValues = closes.map(price => {
-        const profitLoss = (initialPrice - price) * numUnits;
-        const portfolioValue = initialCash + profitLoss;
-        return portfolioValue;
-    });
+    for (let i = 0; i < closes.length; i++) {
+        const price = closes[i];
+
+        if (invested) {
+            // Update maxPrice
+            if (price > maxPrice) {
+                maxPrice = price;
+            }
+
+            // Calculate stop-loss price (10% increase from entryPrice)
+            const stopLossPrice = entryPrice * 1.10;
+
+            if (price >= stopLossPrice) {
+                // Stop-loss triggered: liquidate position
+                const profitLoss = (entryPrice - price) * numUnits;
+                cash += profitLoss;
+                invested = false;
+                portfolioValues.push(cash); // Record portfolio value
+                numUnits = 0; // Reset number of units
+                // Indicate stop-loss event (optional)
+                console.log(`Stop-loss triggered on ${dates[i]} at price ${price.toFixed(2)}`);
+            } else {
+                // Position is still open
+                const profitLoss = (entryPrice - price) * numUnits;
+                portfolioValues.push(cash + profitLoss);
+            }
+        } else {
+            // Not invested: portfolio value remains constant
+            portfolioValues.push(cash);
+        }
+
+        // Record investment status
+        investmentStatus.push(invested);
+
+        // Check for local maximum to re-invest
+        if (!invested && i > 0 && i < closes.length - 1) {
+            const prevPrice = closes[i - 1];
+            const nextPrice = closes[i + 1];
+
+            if (price > prevPrice && price > nextPrice) {
+                // Local maximum detected: re-invest
+                invested = true;
+                entryPrice = price;
+                maxPrice = price;
+                numUnits = (cash / entryPrice) * leverage;
+                console.log(`Re-invested on ${dates[i]} at price ${price.toFixed(2)}`);
+
+                // Update portfolio value after re-investment
+                const profitLoss = (entryPrice - price) * numUnits;
+                portfolioValues[i] = cash + profitLoss;
+            }
+        }
+    }
 
     // Get the canvas context
     const ctx = document.getElementById('myChart').getContext('2d');
@@ -96,11 +148,18 @@ function renderChart(data) {
                     label: 'Portfolio Value',
                     data: portfolioValues,
                     yAxisID: 'y1',
-                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderColor: 'rgba(255, 99, 132, 1)', // Default color
                     borderWidth: 2,
                     pointRadius: 0,
                     fill: false,
-                    tension: 0.1
+                    tension: 0.1,
+                    segment: {
+                        borderColor: ctx => {
+                            const index = ctx.p0DataIndex;
+                            const invested = investmentStatus[index];
+                            return invested ? 'rgba(255, 99, 132, 1)' : 'rgba(54, 162, 235, 1)';
+                        }
+                    }
                 }
             ]
         },
@@ -147,7 +206,19 @@ function renderChart(data) {
                 tooltip: {
                     enabled: true,
                     mode: 'index',
-                    intersect: false
+                    intersect: false,
+                    callbacks: {
+                        label: function (context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.parsed.y !== null) {
+                                label += context.parsed.y.toFixed(2);
+                            }
+                            return label;
+                        }
+                    }
                 }
             },
             interaction: {
