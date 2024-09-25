@@ -1,12 +1,12 @@
 // Leverage factor, default is 4x
-const leverage = 1;
+const leverage = 4;
 
 // Position type: 1 for short, 2 for long
 const positionType = 2; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
 const startDate = '01/01/2021'; // MM/DD/YYYY
-const endDate = '05/31/2021';   // MM/DD/YYYY
+const endDate = '02/31/2021';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
