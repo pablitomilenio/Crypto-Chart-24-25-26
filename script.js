@@ -252,7 +252,11 @@ function renderChart(data) {
                     },
                     title: {
                         display: true,
-                        text: 'Date'
+                        text: 'Date',
+                        color: 'white' // Set axis title color to white
+                    },
+                    ticks: {
+                        color: 'white' // Set x-axis tick color to white
                     }
                 },
                 y: {
@@ -260,7 +264,11 @@ function renderChart(data) {
                     position: 'left',
                     title: {
                         display: true,
-                        text: 'Close Price (USD)'
+                        text: 'Close Price (USD)',
+                        color: 'white' // Set axis title color to white
+                    },
+                    ticks: {
+                        color: 'white' // Set y-axis tick color to white
                     }
                 },
                 y1: {
@@ -268,7 +276,11 @@ function renderChart(data) {
                     position: 'right',
                     title: {
                         display: true,
-                        text: 'Portfolio Value (USD)'
+                        text: 'Portfolio Value (USD)',
+                        color: 'white' // Set axis title color to white
+                    },
+                    ticks: {
+                        color: 'white' // Set y1-axis tick color to white
                     },
                     grid: {
                         drawOnChartArea: false
@@ -279,6 +291,7 @@ function renderChart(data) {
                 legend: {
                     display: true,
                     labels: {
+                        color: 'white', // Set legend text color to white
                         generateLabels: function (chart) {
                             const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
                             // Remove the default 'Portfolio Value' label
@@ -332,6 +345,13 @@ function renderChart(data) {
 
 // Main function to execute on page load
 window.onload = function () {
+    // Apply the gradient background to the body
+    document.body.style.background = 'linear-gradient(to bottom, darkgray, black)';
+
+    // Set the canvas background to transparent
+    const canvas = document.getElementById('myChart');
+    canvas.style.backgroundColor = 'transparent';
+
     readCSV(function (csvData) {
         const jsonData = parseCSV(csvData);
         renderChart(jsonData);
