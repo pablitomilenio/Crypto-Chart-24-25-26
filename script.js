@@ -2,8 +2,8 @@
 const leverage = 4;
 
 // Define the start and end dates for filtering
-const startDate = '01/01/2021'; // MM/DD/YYYY
-const endDate = '05/31/2021';   // MM/DD/YYYY
+const startDate = '02/01/2021'; // MM/DD/YYYY
+const endDate = '09/15/2021';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
