@@ -2,7 +2,7 @@
 const leverage = 1;
 
 // Position type: 1 for short, 2 for long
-const positionType = 1; // Set to 1 for short, 2 for long
+const positionType = 2; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
 const startDate = '01/01/2021'; // MM/DD/YYYY
@@ -194,8 +194,8 @@ function renderChart(data) {
                     label: 'Close Price',
                     data: closes,
                     yAxisID: 'y',
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 2,
+                    borderColor: 'orange',
+                    borderWidth: 3,
                     pointRadius: 0, // No points on the line
                     fill: false,
                     tension: 0.1
@@ -207,7 +207,7 @@ function renderChart(data) {
                     yAxisID: 'y',
                     type: 'scatter',
                     pointRadius: 6,
-                    pointBackgroundColor: 'rgba(255, 205, 86, 1)', // Distinctive color
+                    pointBackgroundColor: 'green', // Distinctive color
                     showLine: false
                 },
                 // Add the stop-loss points dataset
@@ -233,7 +233,7 @@ function renderChart(data) {
                         borderColor: ctx => {
                             const index = ctx.p0DataIndex;
                             const invested = investmentStatus[index];
-                            return invested ? 'rgba(0, 123, 255, 1)' : 'rgba(108, 117, 125, 1)';
+                            return invested ? 'magenta' : 'blue';
                         }
                     }
                 }
