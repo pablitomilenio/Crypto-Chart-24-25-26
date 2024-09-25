@@ -233,7 +233,7 @@ function renderChart(data) {
                         borderColor: ctx => {
                             const index = ctx.p0DataIndex;
                             const invested = investmentStatus[index];
-                            return invested ? 'magenta' : 'blue';
+                            return invested ? 'magenta' : 'white';
                         }
                     }
                 }
@@ -307,8 +307,8 @@ function renderChart(data) {
                             });
                             labels.push({
                                 text: 'Portfolio Value (Uninvested)',
-                                fillStyle: 'blue',
-                                strokeStyle: 'blue',
+                                fillStyle: 'white',
+                                strokeStyle: 'white',
                                 lineWidth: 2,
                                 hidden: false,
                                 index: 4
