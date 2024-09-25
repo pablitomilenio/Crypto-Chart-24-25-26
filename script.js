@@ -1,9 +1,12 @@
 // Leverage factor, default is 4x
 const leverage = 1;
 
+// Position type: 1 for short, 2 for long
+const positionType = 1; // Set to 1 for short, 2 for long
+
 // Define the start and end dates for filtering
-const startDate = '01/22/2021'; // MM/DD/YYYY
-const endDate = '02/28/2021';   // MM/DD/YYYY
+const startDate = '01/01/2021'; // MM/DD/YYYY
+const endDate = '05/31/2021';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
@@ -64,10 +67,11 @@ function renderChart(data) {
     // Initialize variables
     const initialCash = 240000; // Initial portfolio value
     let cash = initialCash; // Current cash position
-    let invested = true; // Whether we currently hold a position
+    let invested = positionType === 1 || positionType === 2; // Whether we currently hold a position
     let entryPrice = closes[0]; // Price at which the position was entered
-    let numUnits = (cash / entryPrice) * leverage; // Number of units shorted
+    let numUnits = (cash / entryPrice) * leverage; // Number of units bought or sold
     let maxPrice = entryPrice; // Maximum price observed since entry
+    let minPrice = entryPrice; // Minimum price observed since entry
     const portfolioValues = []; // Array to hold portfolio values
     const investmentStatus = []; // Array to hold investment status (true/false)
     const reinvestmentPoints = []; // Array to hold reinvestment dates and prices
@@ -76,27 +80,48 @@ function renderChart(data) {
         const price = closes[i];
 
         if (invested) {
-            // Update maxPrice
+            // Update maxPrice and minPrice
             if (price > maxPrice) {
                 maxPrice = price;
             }
+            if (price < minPrice) {
+                minPrice = price;
+            }
 
-            // Calculate stop-loss price (10% increase from entryPrice)
-            const stopLossPrice = entryPrice * 1.10;
-
-            if (price >= stopLossPrice) {
-                // Stop-loss triggered: liquidate position
-                const profitLoss = (entryPrice - price) * numUnits;
-                cash += profitLoss;
-                invested = false;
-                portfolioValues.push(cash); // Record portfolio value
-                numUnits = 0; // Reset number of units
-                // Indicate stop-loss event (optional)
-                console.log(`Stop-loss triggered on ${dates[i]} at price ${price.toFixed(2)}`);
-            } else {
-                // Position is still open
-                const profitLoss = (entryPrice - price) * numUnits;
-                portfolioValues.push(cash + profitLoss);
+            // Calculate trailing stop-loss price
+            let stopLossPrice;
+            if (positionType === 1) {
+                // Short position: Stop-loss at 10% increase from entryPrice
+                stopLossPrice = entryPrice * 1.10;
+                if (price >= stopLossPrice) {
+                    // Stop-loss triggered: liquidate position
+                    const profitLoss = (entryPrice - price) * numUnits;
+                    cash += profitLoss;
+                    invested = false;
+                    portfolioValues.push(cash); // Record portfolio value
+                    numUnits = 0; // Reset number of units
+                    console.log(`Stop-loss triggered (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
+                } else {
+                    // Position is still open
+                    const profitLoss = (entryPrice - price) * numUnits;
+                    portfolioValues.push(cash + profitLoss);
+                }
+            } else if (positionType === 2) {
+                // Long position: Trailing stop-loss at 10% below maxPrice
+                stopLossPrice = maxPrice * 0.90;
+                if (price <= stopLossPrice) {
+                    // Stop-loss triggered: liquidate position
+                    const profitLoss = (price - entryPrice) * numUnits;
+                    cash += profitLoss;
+                    invested = false;
+                    portfolioValues.push(cash); // Record portfolio value
+                    numUnits = 0; // Reset number of units
+                    console.log(`Trailing Stop-loss triggered (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
+                } else {
+                    // Position is still open
+                    const profitLoss = (price - entryPrice) * numUnits;
+                    portfolioValues.push(cash + profitLoss);
+                }
             }
         } else {
             // Not invested: portfolio value remains constant
@@ -106,25 +131,45 @@ function renderChart(data) {
         // Record investment status
         investmentStatus.push(invested);
 
-        // Check for local maximum to re-invest
+        // Check for re-entry conditions
         if (!invested && i > 0 && i < closes.length - 1) {
             const prevPrice = closes[i - 1];
             const nextPrice = closes[i + 1];
 
-            if (price > prevPrice && price > nextPrice) {
-                // Local maximum detected: re-invest
-                invested = true;
-                entryPrice = price;
-                maxPrice = price;
-                numUnits = (cash / entryPrice) * leverage;
-                console.log(`Re-invested on ${dates[i]} at price ${price.toFixed(2)}`);
+            if (positionType === 1) {
+                // Short position: Re-invest at local maxima
+                if (price > prevPrice && price > nextPrice) {
+                    // Local maximum detected: re-invest
+                    invested = true;
+                    entryPrice = price;
+                    maxPrice = price;
+                    numUnits = (cash / entryPrice) * leverage;
+                    console.log(`Re-invested (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
 
-                // Record the reinvestment point
-                reinvestmentPoints.push({ date: dates[i], price: price });
+                    // Record the reinvestment point
+                    reinvestmentPoints.push({ date: dates[i], price: price });
 
-                // Update portfolio value after re-investment
-                const profitLoss = (entryPrice - price) * numUnits;
-                portfolioValues[i] = cash + profitLoss;
+                    // Update portfolio value after re-investment
+                    const profitLoss = (entryPrice - price) * numUnits;
+                    portfolioValues[i] = cash + profitLoss;
+                }
+            } else if (positionType === 2) {
+                // Long position: Re-invest at local minima
+                if (price < prevPrice && price < nextPrice) {
+                    // Local minimum detected: re-invest
+                    invested = true;
+                    entryPrice = price;
+                    maxPrice = price; // Reset maxPrice on re-entry
+                    numUnits = (cash / entryPrice) * leverage;
+                    console.log(`Re-invested (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
+
+                    // Record the reinvestment point
+                    reinvestmentPoints.push({ date: dates[i], price: price });
+
+                    // Update portfolio value after re-investment
+                    const profitLoss = (price - entryPrice) * numUnits;
+                    portfolioValues[i] = cash + profitLoss;
+                }
             }
         }
     }
