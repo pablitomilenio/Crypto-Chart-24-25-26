@@ -1,3 +1,6 @@
+// Leverage factor, default is 4x
+const leverage = 4;
+
 // Function to read and parse the CSV file
 function readCSV(callback) {
     // Create a new XMLHttpRequest object
@@ -44,7 +47,7 @@ function renderChart(data) {
     // Calculate the number of units shorted at the initial price
     const initialCash = 240000; // Initial portfolio value
     const initialPrice = closes[0]; // Initial close price
-    const numUnits = initialCash / initialPrice;
+    const numUnits = (initialCash / initialPrice) * leverage;
 
     // Calculate portfolio values over time
     const portfolioValues = closes.map(price => {
