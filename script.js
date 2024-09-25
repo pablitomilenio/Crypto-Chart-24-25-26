@@ -299,16 +299,16 @@ function renderChart(data) {
                             // Add custom labels for 'Invested' and 'Uninvested'
                             labels.push({
                                 text: 'Portfolio Value (Invested)',
-                                fillStyle: 'rgba(0, 123, 255, 1)',
-                                strokeStyle: 'rgba(0, 123, 255, 1)',
+                                fillStyle: 'magenta',
+                                strokeStyle: 'magenta',
                                 lineWidth: 2,
                                 hidden: false,
                                 index: 3
                             });
                             labels.push({
                                 text: 'Portfolio Value (Uninvested)',
-                                fillStyle: 'rgba(108, 117, 125, 1)',
-                                strokeStyle: 'rgba(108, 117, 125, 1)',
+                                fillStyle: 'blue',
+                                strokeStyle: 'blue',
                                 lineWidth: 2,
                                 hidden: false,
                                 index: 4
