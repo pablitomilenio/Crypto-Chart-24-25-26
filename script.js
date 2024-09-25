@@ -75,6 +75,7 @@ function renderChart(data) {
     const portfolioValues = []; // Array to hold portfolio values
     const investmentStatus = []; // Array to hold investment status (true/false)
     const reinvestmentPoints = []; // Array to hold reinvestment dates and prices
+    const stopLossPoints = []; // Array to hold stop-loss trigger dates and prices
 
     for (let i = 0; i < closes.length; i++) {
         const price = closes[i];
@@ -101,6 +102,9 @@ function renderChart(data) {
                     portfolioValues.push(cash); // Record portfolio value
                     numUnits = 0; // Reset number of units
                     console.log(`Stop-loss triggered (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
+
+                    // Record the stop-loss point
+                    stopLossPoints.push({ date: dates[i], price: price });
                 } else {
                     // Position is still open
                     const profitLoss = (entryPrice - price) * numUnits;
@@ -117,6 +121,9 @@ function renderChart(data) {
                     portfolioValues.push(cash); // Record portfolio value
                     numUnits = 0; // Reset number of units
                     console.log(`Trailing Stop-loss triggered (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
+
+                    // Record the stop-loss point
+                    stopLossPoints.push({ date: dates[i], price: price });
                 } else {
                     // Position is still open
                     const profitLoss = (price - entryPrice) * numUnits;
@@ -203,11 +210,21 @@ function renderChart(data) {
                     pointBackgroundColor: 'rgba(255, 205, 86, 1)', // Distinctive color
                     showLine: false
                 },
+                // Add the stop-loss points dataset
+                {
+                    label: 'Stop-Loss Points',
+                    data: stopLossPoints.map(point => ({ x: point.date, y: point.price })),
+                    yAxisID: 'y',
+                    type: 'scatter',
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgba(255, 99, 132, 1)', // Distinctive color
+                    showLine: false
+                },
                 {
                     label: 'Portfolio Value',
                     data: portfolioValues,
                     yAxisID: 'y1',
-                    borderColor: 'rgba(255, 99, 132, 1)', // Default color
+                    borderColor: 'rgba(0, 123, 255, 1)', // Default color
                     borderWidth: 2,
                     pointRadius: 0,
                     fill: false,
@@ -216,7 +233,7 @@ function renderChart(data) {
                         borderColor: ctx => {
                             const index = ctx.p0DataIndex;
                             const invested = investmentStatus[index];
-                            return invested ? 'rgba(255, 99, 132, 1)' : 'rgba(54, 162, 235, 1)';
+                            return invested ? 'rgba(0, 123, 255, 1)' : 'rgba(108, 117, 125, 1)';
                         }
                     }
                 }
@@ -265,23 +282,23 @@ function renderChart(data) {
                         generateLabels: function (chart) {
                             const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
                             // Remove the default 'Portfolio Value' label
-                            labels.splice(2, 1);
+                            labels.splice(3, 1);
                             // Add custom labels for 'Invested' and 'Uninvested'
                             labels.push({
                                 text: 'Portfolio Value (Invested)',
-                                fillStyle: 'rgba(255, 99, 132, 1)',
-                                strokeStyle: 'rgba(255, 99, 132, 1)',
-                                lineWidth: 2,
-                                hidden: false,
-                                index: 2
-                            });
-                            labels.push({
-                                text: 'Portfolio Value (Uninvested)',
-                                fillStyle: 'rgba(54, 162, 235, 1)',
-                                strokeStyle: 'rgba(54, 162, 235, 1)',
+                                fillStyle: 'rgba(0, 123, 255, 1)',
+                                strokeStyle: 'rgba(0, 123, 255, 1)',
                                 lineWidth: 2,
                                 hidden: false,
                                 index: 3
+                            });
+                            labels.push({
+                                text: 'Portfolio Value (Uninvested)',
+                                fillStyle: 'rgba(108, 117, 125, 1)',
+                                strokeStyle: 'rgba(108, 117, 125, 1)',
+                                lineWidth: 2,
+                                hidden: false,
+                                index: 4
                             });
                             return labels;
                         }
