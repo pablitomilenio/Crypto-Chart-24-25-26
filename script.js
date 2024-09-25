@@ -1,9 +1,9 @@
 // Leverage factor, default is 4x
-const leverage = 4;
+const leverage = 1;
 
 // Define the start and end dates for filtering
-const startDate = '02/01/2021'; // MM/DD/YYYY
-const endDate = '09/15/2021';   // MM/DD/YYYY
+const startDate = '01/01/2021'; // MM/DD/YYYY
+const endDate = '05/31/2021';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
@@ -70,6 +70,7 @@ function renderChart(data) {
     let maxPrice = entryPrice; // Maximum price observed since entry
     const portfolioValues = []; // Array to hold portfolio values
     const investmentStatus = []; // Array to hold investment status (true/false)
+    const reinvestmentPoints = []; // Array to hold reinvestment dates and prices
 
     for (let i = 0; i < closes.length; i++) {
         const price = closes[i];
@@ -118,6 +119,9 @@ function renderChart(data) {
                 numUnits = (cash / entryPrice) * leverage;
                 console.log(`Re-invested on ${dates[i]} at price ${price.toFixed(2)}`);
 
+                // Record the reinvestment point
+                reinvestmentPoints.push({ date: dates[i], price: price });
+
                 // Update portfolio value after re-investment
                 const profitLoss = (entryPrice - price) * numUnits;
                 portfolioValues[i] = cash + profitLoss;
@@ -140,9 +144,19 @@ function renderChart(data) {
                     yAxisID: 'y',
                     borderColor: 'rgba(75, 192, 192, 1)',
                     borderWidth: 2,
-                    pointRadius: 0,
+                    pointRadius: 0, // No points on the line
                     fill: false,
                     tension: 0.1
+                },
+                // Add the reinvestment points dataset
+                {
+                    label: 'Reinvestment Points',
+                    data: reinvestmentPoints.map(point => ({ x: point.date, y: point.price })),
+                    yAxisID: 'y',
+                    type: 'scatter',
+                    pointRadius: 6,
+                    pointBackgroundColor: 'rgba(255, 205, 86, 1)', // Distinctive color
+                    showLine: false
                 },
                 {
                     label: 'Portfolio Value',
@@ -201,7 +215,32 @@ function renderChart(data) {
             },
             plugins: {
                 legend: {
-                    display: true
+                    display: true,
+                    labels: {
+                        generateLabels: function (chart) {
+                            const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
+                            // Remove the default 'Portfolio Value' label
+                            labels.splice(2, 1);
+                            // Add custom labels for 'Invested' and 'Uninvested'
+                            labels.push({
+                                text: 'Portfolio Value (Invested)',
+                                fillStyle: 'rgba(255, 99, 132, 1)',
+                                strokeStyle: 'rgba(255, 99, 132, 1)',
+                                lineWidth: 2,
+                                hidden: false,
+                                index: 2
+                            });
+                            labels.push({
+                                text: 'Portfolio Value (Uninvested)',
+                                fillStyle: 'rgba(54, 162, 235, 1)',
+                                strokeStyle: 'rgba(54, 162, 235, 1)',
+                                lineWidth: 2,
+                                hidden: false,
+                                index: 3
+                            });
+                            return labels;
+                        }
+                    }
                 },
                 tooltip: {
                     enabled: true,
