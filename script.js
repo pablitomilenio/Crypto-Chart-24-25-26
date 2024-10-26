@@ -1,5 +1,7 @@
+// Hello ChatGPT: I don't want to use node.js or python. I want this to be on plain js
+
 // Leverage factor, default is 4x
-const leverage = 4;
+const leverage = 1;
 
 // Position type: 1 for short, 2 for long
 const positionType = 2; // Set to 1 for short, 2 for long
