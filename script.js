@@ -1,7 +1,7 @@
 // Hello ChatGPT: I don't want to use node.js or python. I want this to be on plain js
 
 // Leverage factor, default is 4x
-const leverage = 1;
+const leverage = 4;
 
 // Position type: 1 for short, 2 for long
 const positionType = 2; // Set to 1 for short, 2 for long
@@ -70,6 +70,7 @@ function renderChart(data) {
     const initialCash = 240000; // Initial portfolio value
     let cash = initialCash; // Current cash position
     let invested = positionType === 1 || positionType === 2; // Whether we currently hold a position
+
     let entryPrice = closes[0]; // Price at which the position was entered
     let numUnits = (cash / entryPrice) * leverage; // Number of units bought or sold
     let maxPrice = entryPrice; // Maximum price observed since entry
@@ -267,10 +268,10 @@ function renderChart(data) {
                     title: {
                         display: true,
                         text: 'Close Price (USD)',
-                        color: 'white' // Set axis title color to white
+                        color: 'yellow' // Set axis title color to white
                     },
                     ticks: {
-                        color: 'white' // Set y-axis tick color to white
+                        color: 'yellow' // Set y-axis tick color to white
                     }
                 },
                 y1: {
@@ -279,10 +280,10 @@ function renderChart(data) {
                     title: {
                         display: true,
                         text: 'Portfolio Value (USD)',
-                        color: 'white' // Set axis title color to white
+                        color: 'pink' // Set axis title color to white
                     },
                     ticks: {
-                        color: 'white' // Set y1-axis tick color to white
+                        color: 'pink' // Set y1-axis tick color to white
                     },
                     grid: {
                         drawOnChartArea: false
