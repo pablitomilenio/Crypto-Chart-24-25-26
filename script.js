@@ -1,12 +1,12 @@
 // Leverage factor, default is 4x
-const leverage = 1;
+const leverage = 2;
 
 // Position type: 1 for short, 2 for long
 const positionType = 1; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
-const startDate = '05/11/2021'; // MM/DD/YYYY
-const endDate = '06/15/2022';   // MM/DD/YYYY
+const startDate = '01/01/2021'; // MM/DD/YYYY
+const endDate = '02/28/2021';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
@@ -75,7 +75,12 @@ function renderChart(data) {
     let invested = positionType === 1 || positionType === 2; // Whether we currently hold a position
 
     let entryPrice = closes[0]; // Price at which the position was entered
-    let numUnits = (cash / entryPrice) * leverage; // Number of units bought or sold
+    let numUnits;
+    if (positionType === 1) { // Short
+        numUnits = (cash * leverage) / entryPrice; // Number of units shorted
+    } else { // Long
+        numUnits = (cash / entryPrice) * leverage; // Number of units bought
+    }
     let maxPrice = entryPrice; // Maximum price observed since entry
     let minPrice = entryPrice; // Minimum price observed since entry
     const portfolioValues = []; // Array to hold portfolio values
@@ -133,10 +138,17 @@ function renderChart(data) {
             }
 
             // Update portfolio value if position is still held
-            const profitLoss = positionType === 1 ? (entryPrice - price) * numUnits : (price - entryPrice) * numUnits;
-            portfolioValues.push(cash + profitLoss);
+            let portfolioValue;
+            if (positionType === 1) { // Short
+                // Portfolio value = cash + initial proceeds - cost to buy back shares
+                portfolioValue = cash + (entryPrice * numUnits) - (price * numUnits);
+            } else { // Long
+                const profitLoss = (price - entryPrice) * numUnits;
+                portfolioValue = cash + profitLoss;
+            }
+            portfolioValues.push(portfolioValue);
         } else {
-            // If stop-loss was triggered, wait for a future local maximum to reinvest for short
+            // If stop-loss was triggered, wait for a future local max/min to reinvest
             if (stopLossTriggered && i > 0 && i < closes.length - 1) {
                 const prevPrice = closes[i - 1];
                 const nextPrice = closes[i + 1];
@@ -145,7 +157,7 @@ function renderChart(data) {
                     invested = true;
                     entryPrice = price;
                     minPrice = price;
-                    numUnits = (cash / entryPrice) * leverage;
+                    numUnits = (cash * leverage) / entryPrice;
                     reinvestmentPoints.push({ date: dates[i], price: price });
                     console.log(`Re-invested (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
                     stopLossTriggered = false; // Reset the stop-loss flag
