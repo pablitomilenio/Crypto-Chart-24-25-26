@@ -1,5 +1,3 @@
-// Hello ChatGPT: I don't want to use node.js or python. I want this to be on plain js
-
 // Leverage factor, default is 4x
 const leverage = 4;
 
@@ -187,6 +185,10 @@ function renderChart(data) {
     // Get the canvas context
     const ctx = document.getElementById('myChart').getContext('2d');
 
+    // Store initial values for percentage calculations
+    const initialClosePrice = closes[0];
+    const initialPortfolioValue = portfolioValues[0];
+
     // Create a new Chart instance
     new Chart(ctx, {
         type: 'line', // Specify the chart type
@@ -268,10 +270,19 @@ function renderChart(data) {
                     title: {
                         display: true,
                         text: 'Close Price (USD)',
-                        color: 'yellow' // Set axis title color to white
+                        color: 'yellow' // Set axis title color to yellow
                     },
                     ticks: {
-                        color: 'yellow' // Set y-axis tick color to white
+                        color: 'yellow', // Set y-axis tick color to yellow
+                        callback: function (value, index, values) {
+                            if (value === 0) {
+                                return '$0';
+                            } else {
+                                // Calculate percentage change from initial close price
+                                const percentageChange = ((value - initialClosePrice) / initialClosePrice) * 100;
+                                return `$${value.toFixed(2)} (${Math.round(percentageChange)}%)`;
+                            }
+                        }
                     }
                 },
                 y1: {
@@ -280,10 +291,19 @@ function renderChart(data) {
                     title: {
                         display: true,
                         text: 'Portfolio Value (USD)',
-                        color: 'pink' // Set axis title color to white
+                        color: 'pink' // Set axis title color to pink
                     },
                     ticks: {
-                        color: 'pink' // Set y1-axis tick color to white
+                        color: 'pink', // Set y1-axis tick color to pink
+                        callback: function (value, index, values) {
+                            if (value === 0) {
+                                return '$0';
+                            } else {
+                                // Calculate percentage change from initial portfolio value
+                                const percentageChange = ((value - initialPortfolioValue) / initialPortfolioValue) * 100;
+                                return `$${Math.round(value)} (${Math.round(percentageChange)}%)`;
+                            }
+                        }
                     },
                     grid: {
                         drawOnChartArea: false
@@ -331,10 +351,45 @@ function renderChart(data) {
                                 label += ': ';
                             }
                             if (context.parsed.y !== null) {
-                                label += context.parsed.y.toFixed(2);
+                                let value = context.parsed.y;
+                                let formattedValue;
+                                if (value === 0) {
+                                    formattedValue = '$0';
+                                    label += `${formattedValue}`;
+                                } else {
+                                    if (context.dataset.yAxisID === 'y') {
+                                        formattedValue = `$${value.toFixed(2)}`; // Close Price with 2 decimal places
+                                    } else if (context.dataset.yAxisID === 'y1') {
+                                        formattedValue = `$${Math.round(value)}`; // Portfolio Value rounded to integer
+                                    }
+                                    // Calculate percentage change
+                                    let percentageChange;
+                                    if (context.dataset.yAxisID === 'y') {
+                                        percentageChange = ((value - initialClosePrice) / initialClosePrice) * 100;
+                                    } else if (context.dataset.yAxisID === 'y1') {
+                                        percentageChange = ((value - initialPortfolioValue) / initialPortfolioValue) * 100;
+                                    }
+                                    label += `${formattedValue} (${Math.round(percentageChange)}%)`;
+                                }
                             }
                             return label;
                         }
+                    }
+                },
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: 'x',
+                        modifierKey: 'ctrl',
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'x',
                     }
                 }
             },
