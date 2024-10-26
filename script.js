@@ -1,8 +1,8 @@
 // Leverage factor, default is 4x
-const leverage = 2;
+const leverage = 1;
 
 // Position type: 1 for short, 2 for long
-const positionType = 2; // Set to 1 for short, 2 for long
+const positionType = 1; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
 const startDate = '01/01/2021'; // MM/DD/YYYY
@@ -126,19 +126,30 @@ function renderChart(data) {
             }
 
             // Update trailing prices if invested
-            maxPrice = positionType === 2 ? Math.max(maxPrice, price) : maxPrice;
-            minPrice = positionType === 1 ? Math.min(minPrice, price) : minPrice;
+            if (positionType === 2) { // Long
+                maxPrice = Math.max(maxPrice, price);
+            } else if (positionType === 1) { // Short
+                minPrice = Math.min(minPrice, price);
+            }
 
             // Update portfolio value if position is still held
             const profitLoss = positionType === 1 ? (entryPrice - price) * numUnits : (price - entryPrice) * numUnits;
             portfolioValues.push(cash + profitLoss);
         } else {
-            // If stop-loss was triggered, wait for a future local minimum to reinvest
-            if (stopLossTriggered && i < closes.length - 1) {
+            // If stop-loss was triggered, wait for a future local maximum to reinvest for short
+            if (stopLossTriggered && i > 0 && i < closes.length - 1) {
                 const prevPrice = closes[i - 1];
                 const nextPrice = closes[i + 1];
 
-                if (positionType === 2 && price < prevPrice && price < nextPrice) { // Long re-invest at local min
+                if (positionType === 1 && price > prevPrice && price > nextPrice) { // Short re-invest at local max
+                    invested = true;
+                    entryPrice = price;
+                    minPrice = price;
+                    numUnits = (cash / entryPrice) * leverage;
+                    reinvestmentPoints.push({ date: dates[i], price: price });
+                    console.log(`Re-invested (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
+                    stopLossTriggered = false; // Reset the stop-loss flag
+                } else if (positionType === 2 && price < prevPrice && price < nextPrice) { // Long re-invest at local min
                     invested = true;
                     entryPrice = price;
                     maxPrice = price;
@@ -348,7 +359,6 @@ window.onload = function () {
 
     // Register the annotation plugin
     Chart.register(window['chartjs-plugin-annotation']);
-
 
     readCSV(function (csvData) {
         const jsonData = parseCSV(csvData);
