@@ -212,6 +212,17 @@ function renderChart(data) {
                             return invested ? 'magenta' : 'white';
                         }
                     }
+                },
+                // Added dataset for "Uninvested" label
+                {
+                    label: 'Uninvested',
+                    data: [NaN], // No data to plot
+                    borderColor: 'white',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    fill: false,
+                    showLine: false, // Do not draw a line
+                    yAxisID: 'y1'
                 }
             ]
         },
@@ -284,13 +295,13 @@ function renderChart(data) {
                     callbacks: {
                         label: function (context) {
                             let label = context.dataset.label || '';
-                            if (context.parsed.y !== null) {
+                            if (context.parsed.y !== null && !isNaN(context.parsed.y)) {
                                 let value = context.parsed.y;
                                 let formattedValue = context.dataset.yAxisID === 'y'
                                     ? `$${value.toFixed(2)}`
                                     : `$${formatNumberWithUptick(Math.round(value))}`;
                                 let percentageChange = ((value - (context.dataset.yAxisID === 'y' ? initialClosePrice : initialPortfolioValue)) / (context.dataset.yAxisID === 'y' ? initialClosePrice : initialPortfolioValue)) * 100;
-                                label += `${formattedValue} (${Math.round(percentageChange)}%)`;
+                                label += `: ${formattedValue} (${Math.round(percentageChange)}%)`;
                             }
                             return label;
                         }
