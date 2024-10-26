@@ -241,7 +241,7 @@ function renderChart(data) {
                     tension: 0.1,
                     segment: {
                         borderColor: ctx => {
-                            const index = ctx.p0DataIndex;
+                            const index = ctx.p1DataIndex;
                             const invested = investmentStatus[index];
                             return invested ? 'magenta' : 'white';
                         }
