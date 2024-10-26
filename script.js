@@ -306,6 +306,30 @@ function renderChart(data) {
                             return label;
                         }
                     }
+                },
+                // Added annotation plugin configuration
+                annotation: {
+                    annotations: {
+                        initialValueLine: {
+                            type: 'line',
+                            scaleID: 'y1',
+                            value: initialPortfolioValue,
+                            borderColor: 'cyan',
+                            borderWidth: 2,
+                            borderDash: [6, 6],
+                            label: {
+                                enabled: true,
+                                content: `Initial Portfolio Value: $${formatNumberWithUptick(Math.round(initialPortfolioValue))}`,
+                                position: 'start',
+                                backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                                color: 'cyan',
+                                font: {
+                                    size: 12
+                                },
+                                yAdjust: -10
+                            }
+                        }
+                    }
                 }
             },
             interaction: {
@@ -321,6 +345,10 @@ window.onload = function () {
     document.body.style.background = 'linear-gradient(to bottom, darkgray, black)';
     const canvas = document.getElementById('myChart');
     canvas.style.backgroundColor = 'transparent';
+
+    // Register the annotation plugin
+    Chart.register(window['chartjs-plugin-annotation']);
+
 
     readCSV(function (csvData) {
         const jsonData = parseCSV(csvData);
