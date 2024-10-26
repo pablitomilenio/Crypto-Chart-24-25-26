@@ -104,6 +104,7 @@ function renderChart(data) {
                     portfolioValues.push(cash); // Record portfolio value
                     stopLossPoints.push({ date: dates[i], price: price });
                     console.log(`Stop-loss triggered (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
+                    investmentStatus.push(invested); // Record investment status
                     continue; // Skip reinvestment in this cycle
                 }
             } else if (positionType === 2) { // Long
@@ -119,6 +120,7 @@ function renderChart(data) {
                     portfolioValues.push(cash); // Record portfolio value
                     stopLossPoints.push({ date: dates[i], price: price });
                     console.log(`Trailing Stop-loss triggered (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
+                    investmentStatus.push(invested); // Record investment status
                     continue; // Skip reinvestment in this cycle
                 }
             }
@@ -198,14 +200,14 @@ function renderChart(data) {
                     label: 'Portfolio Value',
                     data: portfolioValues,
                     yAxisID: 'y1',
-                    borderColor: 'blue',
+                    borderColor: 'magenta',
                     borderWidth: 2,
                     pointRadius: 0,
                     fill: false,
                     tension: 0.1,
                     segment: {
                         borderColor: ctx => {
-                            const index = ctx.p1DataIndex;
+                            const index = ctx.p0DataIndex;
                             const invested = investmentStatus[index];
                             return invested ? 'magenta' : 'white';
                         }
