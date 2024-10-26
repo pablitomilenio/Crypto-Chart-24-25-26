@@ -82,109 +82,75 @@ function renderChart(data) {
     const investmentStatus = []; // Array to hold investment status (true/false)
     const reinvestmentPoints = []; // Array to hold reinvestment dates and prices
     const stopLossPoints = []; // Array to hold stop-loss trigger dates and prices
+    let stopLossTriggered = false; // Track if a stop-loss has recently triggered
 
     for (let i = 0; i < closes.length; i++) {
         const price = closes[i];
 
         if (invested) {
-            // Update maxPrice and minPrice
-            if (price > maxPrice) {
-                maxPrice = price;
-            }
-            if (price < minPrice) {
-                minPrice = price;
-            }
-
-            // Calculate trailing stop-loss price
+            // Stop-loss logic
             let stopLossPrice;
-            if (positionType === 1) {
-                // Short position: Stop-loss at 10% increase from entryPrice
+
+            if (positionType === 1) { // Short
                 stopLossPrice = entryPrice * 1.10;
                 if (price >= stopLossPrice) {
-                    // Stop-loss triggered: liquidate position
+                    // Stop-loss triggered
                     const profitLoss = (entryPrice - price) * numUnits;
                     cash += profitLoss;
                     invested = false;
-                    portfolioValues.push(cash); // Record portfolio value
-                    numUnits = 0; // Reset number of units
-                    console.log(`Stop-loss triggered (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
+                    numUnits = 0;
+                    stopLossTriggered = true;
 
-                    // Record the stop-loss point
+                    portfolioValues.push(cash); // Record portfolio value
                     stopLossPoints.push({ date: dates[i], price: price });
-                } else {
-                    // Position is still open
-                    const profitLoss = (entryPrice - price) * numUnits;
-                    portfolioValues.push(cash + profitLoss);
+                    console.log(`Stop-loss triggered (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
+                    continue; // Skip reinvestment in this cycle
                 }
-            } else if (positionType === 2) {
-                // Long position: Trailing stop-loss at 10% below maxPrice
+            } else if (positionType === 2) { // Long
                 stopLossPrice = maxPrice * 0.90;
                 if (price <= stopLossPrice) {
-                    // Stop-loss triggered: liquidate position
+                    // Stop-loss triggered
                     const profitLoss = (price - entryPrice) * numUnits;
                     cash += profitLoss;
                     invested = false;
-                    portfolioValues.push(cash); // Record portfolio value
-                    numUnits = 0; // Reset number of units
-                    console.log(`Trailing Stop-loss triggered (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
+                    numUnits = 0;
+                    stopLossTriggered = true;
 
-                    // Record the stop-loss point
+                    portfolioValues.push(cash); // Record portfolio value
                     stopLossPoints.push({ date: dates[i], price: price });
-                } else {
-                    // Position is still open
-                    const profitLoss = (price - entryPrice) * numUnits;
-                    portfolioValues.push(cash + profitLoss);
+                    console.log(`Trailing Stop-loss triggered (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
+                    continue; // Skip reinvestment in this cycle
                 }
             }
+
+            // Update trailing prices if invested
+            maxPrice = positionType === 2 ? Math.max(maxPrice, price) : maxPrice;
+            minPrice = positionType === 1 ? Math.min(minPrice, price) : minPrice;
+
+            // Update portfolio value if position is still held
+            const profitLoss = positionType === 1 ? (entryPrice - price) * numUnits : (price - entryPrice) * numUnits;
+            portfolioValues.push(cash + profitLoss);
         } else {
-            // Not invested: portfolio value remains constant
-            portfolioValues.push(cash);
-        }
+            // If stop-loss was triggered, wait for a future local minimum to reinvest
+            if (stopLossTriggered && i < closes.length - 1) {
+                const prevPrice = closes[i - 1];
+                const nextPrice = closes[i + 1];
 
-        // Record investment status
-        investmentStatus.push(invested);
-
-        // Check for re-entry conditions
-        if (!invested && i > 0 && i < closes.length - 1) {
-            const prevPrice = closes[i - 1];
-            const nextPrice = closes[i + 1];
-
-            if (positionType === 1) {
-                // Short position: Re-invest at local maxima
-                if (price > prevPrice && price > nextPrice) {
-                    // Local maximum detected: re-invest
+                if (positionType === 2 && price < prevPrice && price < nextPrice) { // Long re-invest at local min
                     invested = true;
                     entryPrice = price;
                     maxPrice = price;
                     numUnits = (cash / entryPrice) * leverage;
-                    console.log(`Re-invested (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
-
-                    // Record the reinvestment point
                     reinvestmentPoints.push({ date: dates[i], price: price });
-
-                    // Update portfolio value after re-investment
-                    const profitLoss = (entryPrice - price) * numUnits;
-                    portfolioValues[i] = cash + profitLoss;
-                }
-            } else if (positionType === 2) {
-                // Long position: Re-invest at local minima
-                if (price < prevPrice && price < nextPrice) {
-                    // Local minimum detected: re-invest
-                    invested = true;
-                    entryPrice = price;
-                    maxPrice = price; // Reset maxPrice on re-entry
-                    numUnits = (cash / entryPrice) * leverage;
                     console.log(`Re-invested (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
-
-                    // Record the reinvestment point
-                    reinvestmentPoints.push({ date: dates[i], price: price });
-
-                    // Update portfolio value after re-investment
-                    const profitLoss = (price - entryPrice) * numUnits;
-                    portfolioValues[i] = cash + profitLoss;
+                    stopLossTriggered = false; // Reset the stop-loss flag
                 }
             }
+            portfolioValues.push(cash); // No position: constant portfolio value
         }
+
+        // Record investment status
+        investmentStatus.push(invested);
     }
 
     // Get the canvas context
@@ -210,31 +176,29 @@ function renderChart(data) {
                     fill: false,
                     tension: 0.1
                 },
-                // Add the reinvestment points dataset
                 {
                     label: 'Reinvestment Points',
                     data: reinvestmentPoints.map(point => ({ x: point.date, y: point.price })),
                     yAxisID: 'y',
                     type: 'scatter',
                     pointRadius: 6,
-                    pointBackgroundColor: 'green', // Distinctive color
+                    pointBackgroundColor: 'green',
                     showLine: false
                 },
-                // Add the stop-loss points dataset
                 {
                     label: 'Stop-Loss Points',
                     data: stopLossPoints.map(point => ({ x: point.date, y: point.price })),
                     yAxisID: 'y',
                     type: 'scatter',
                     pointRadius: 6,
-                    pointBackgroundColor: 'rgba(255, 99, 132, 1)', // Distinctive color
+                    pointBackgroundColor: 'red',
                     showLine: false
                 },
                 {
                     label: 'Portfolio Value',
                     data: portfolioValues,
                     yAxisID: 'y1',
-                    borderColor: 'rgba(0, 123, 255, 1)', // Default color
+                    borderColor: 'blue',
                     borderWidth: 2,
                     pointRadius: 0,
                     fill: false,
@@ -263,10 +227,10 @@ function renderChart(data) {
                     title: {
                         display: true,
                         text: 'Date',
-                        color: 'white' // Set axis title color to white
+                        color: 'white'
                     },
                     ticks: {
-                        color: 'white' // Set x-axis tick color to white
+                        color: 'white'
                     }
                 },
                 y: {
@@ -275,18 +239,13 @@ function renderChart(data) {
                     title: {
                         display: true,
                         text: 'Close Price (USD)',
-                        color: 'yellow' // Set axis title color to yellow
+                        color: 'yellow'
                     },
                     ticks: {
-                        color: 'yellow', // Set y-axis tick color to yellow
-                        callback: function (value, index, values) {
-                            if (value === 0) {
-                                return '$0';
-                            } else {
-                                // Calculate percentage change from initial close price
-                                const percentageChange = ((value - initialClosePrice) / initialClosePrice) * 100;
-                                return `$${value.toFixed(2)} (${Math.round(percentageChange)}%)`;
-                            }
+                        color: 'yellow',
+                        callback: function (value) {
+                            const percentageChange = ((value - initialClosePrice) / initialClosePrice) * 100;
+                            return `$${value.toFixed(2)} (${Math.round(percentageChange)}%)`;
                         }
                     }
                 },
@@ -296,19 +255,13 @@ function renderChart(data) {
                     title: {
                         display: true,
                         text: 'Portfolio Value (USD)',
-                        color: 'magenta' // Set axis title color to pink
+                        color: 'magenta'
                     },
                     ticks: {
-                        color: 'pink', // Set y1-axis tick color to pink
-                        callback: function (value, index, values) {
-                            if (value === 0) {
-                                return '$0';
-                            } else {
-                                // Calculate percentage change from initial portfolio value
-                                const percentageChange = ((value - initialPortfolioValue) / initialPortfolioValue) * 100;
-                                const formattedValue = formatNumberWithUptick(Math.round(value));
-                                return `$${formattedValue} (${Math.round(percentageChange)}%)`;
-                            }
+                        color: 'pink',
+                        callback: function (value) {
+                            const percentageChange = ((value - initialPortfolioValue) / initialPortfolioValue) * 100;
+                            return `$${formatNumberWithUptick(Math.round(value))} (${Math.round(percentageChange)}%)`;
                         }
                     },
                     grid: {
@@ -318,32 +271,8 @@ function renderChart(data) {
             },
             plugins: {
                 legend: {
-                    display: true,
                     labels: {
-                        color: 'white', // Set legend text color to white
-                        generateLabels: function (chart) {
-                            const labels = Chart.defaults.plugins.legend.labels.generateLabels(chart);
-                            // Remove the default 'Portfolio Value' label
-                            labels.splice(3, 1);
-                            // Add custom labels for 'Invested' and 'Uninvested'
-                            labels.push({
-                                text: 'Portfolio Value (Invested)',
-                                fillStyle: 'magenta',
-                                strokeStyle: 'magenta',
-                                lineWidth: 2,
-                                hidden: false,
-                                index: 3
-                            });
-                            labels.push({
-                                text: 'Portfolio Value (Uninvested)',
-                                fillStyle: 'white',
-                                strokeStyle: 'white',
-                                lineWidth: 2,
-                                hidden: false,
-                                index: 4
-                            });
-                            return labels;
-                        }
+                        color: 'white'
                     }
                 },
                 tooltip: {
@@ -353,69 +282,16 @@ function renderChart(data) {
                     callbacks: {
                         label: function (context) {
                             let label = context.dataset.label || '';
-                            if (label) {
-                                label += ': ';
-                            }
                             if (context.parsed.y !== null) {
                                 let value = context.parsed.y;
-                                if (value === 0) {
-                                    label += '$0';
-                                } else {
-                                    let formattedValue;
-                                    if (context.dataset.yAxisID === 'y') {
-                                        formattedValue = `$${value.toFixed(2)}`; // Close Price with 2 decimal places
-                                    } else if (context.dataset.yAxisID === 'y1') {
-                                        formattedValue = `$${formatNumberWithUptick(Math.round(value))}`; // Portfolio Value with uptick separator
-                                    }
-                                    // Calculate percentage change
-                                    let percentageChange;
-                                    if (context.dataset.yAxisID === 'y') {
-                                        percentageChange = ((value - initialClosePrice) / initialClosePrice) * 100;
-                                    } else if (context.dataset.yAxisID === 'y1') {
-                                        percentageChange = ((value - initialPortfolioValue) / initialPortfolioValue) * 100;
-                                    }
-                                    label += `${formattedValue} (${Math.round(percentageChange)}%)`;
-                                }
+                                let formattedValue = context.dataset.yAxisID === 'y'
+                                    ? `$${value.toFixed(2)}`
+                                    : `$${formatNumberWithUptick(Math.round(value))}`;
+                                let percentageChange = ((value - (context.dataset.yAxisID === 'y' ? initialClosePrice : initialPortfolioValue)) / (context.dataset.yAxisID === 'y' ? initialClosePrice : initialPortfolioValue)) * 100;
+                                label += `${formattedValue} (${Math.round(percentageChange)}%)`;
                             }
                             return label;
                         }
-                    }
-                },
-                annotation: {
-                    annotations: {
-                        initialPortfolioLine: {
-                            type: 'line',
-                            yMin: initialPortfolioValue,
-                            yMax: initialPortfolioValue,
-                            borderColor: 'white',
-                            borderWidth: 1,
-                            borderDash: [5, 5],
-                            yScaleID: 'y1',
-                            label: {
-                                content: `Initial Portfolio Value: $${formatNumberWithUptick(Math.round(initialPortfolioValue))}`,
-                                enabled: true,
-                                position: 'end',
-                                backgroundColor: 'rgba(0,0,0,0.7)',
-                                color: 'white',
-                                yAdjust: -10,
-                            }
-                        }
-                    }
-                },
-                zoom: {
-                    pan: {
-                        enabled: true,
-                        mode: 'x',
-                        modifierKey: 'ctrl',
-                    },
-                    zoom: {
-                        wheel: {
-                            enabled: true,
-                        },
-                        pinch: {
-                            enabled: true
-                        },
-                        mode: 'x',
                     }
                 }
             },
@@ -429,10 +305,7 @@ function renderChart(data) {
 
 // Main function to execute on page load
 window.onload = function () {
-    // Apply the gradient background to the body
     document.body.style.background = 'linear-gradient(to bottom, darkgray, black)';
-
-    // Set the canvas background to transparent
     const canvas = document.getElementById('myChart');
     canvas.style.backgroundColor = 'transparent';
 
