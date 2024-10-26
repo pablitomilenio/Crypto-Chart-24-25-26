@@ -54,6 +54,11 @@ function parseCSV(csv) {
     return data;
 }
 
+// Function to format numbers with thousands separator using uptick
+function formatNumberWithUptick(value) {
+    return value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, "'");
+}
+
 // Function to render the chart
 function renderChart(data) {
     // Extract dates and close prices
@@ -301,7 +306,8 @@ function renderChart(data) {
                             } else {
                                 // Calculate percentage change from initial portfolio value
                                 const percentageChange = ((value - initialPortfolioValue) / initialPortfolioValue) * 100;
-                                return `$${Math.round(value)} (${Math.round(percentageChange)}%)`;
+                                const formattedValue = formatNumberWithUptick(Math.round(value));
+                                return `$${formattedValue} (${Math.round(percentageChange)}%)`;
                             }
                         }
                     },
@@ -352,15 +358,14 @@ function renderChart(data) {
                             }
                             if (context.parsed.y !== null) {
                                 let value = context.parsed.y;
-                                let formattedValue;
                                 if (value === 0) {
-                                    formattedValue = '$0';
-                                    label += `${formattedValue}`;
+                                    label += '$0';
                                 } else {
+                                    let formattedValue;
                                     if (context.dataset.yAxisID === 'y') {
                                         formattedValue = `$${value.toFixed(2)}`; // Close Price with 2 decimal places
                                     } else if (context.dataset.yAxisID === 'y1') {
-                                        formattedValue = `$${Math.round(value)}`; // Portfolio Value rounded to integer
+                                        formattedValue = `$${formatNumberWithUptick(Math.round(value))}`; // Portfolio Value with uptick separator
                                     }
                                     // Calculate percentage change
                                     let percentageChange;
@@ -373,6 +378,27 @@ function renderChart(data) {
                                 }
                             }
                             return label;
+                        }
+                    }
+                },
+                annotation: {
+                    annotations: {
+                        initialPortfolioLine: {
+                            type: 'line',
+                            yMin: initialPortfolioValue,
+                            yMax: initialPortfolioValue,
+                            borderColor: 'white',
+                            borderWidth: 1,
+                            borderDash: [5, 5],
+                            yScaleID: 'y1',
+                            label: {
+                                content: `Initial Portfolio Value: $${formatNumberWithUptick(Math.round(initialPortfolioValue))}`,
+                                enabled: true,
+                                position: 'end',
+                                backgroundColor: 'rgba(0,0,0,0.7)',
+                                color: 'white',
+                                yAdjust: -10,
+                            }
                         }
                     }
                 },
