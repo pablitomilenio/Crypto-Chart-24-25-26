@@ -5,7 +5,7 @@ const leverage = 2;
 const positionType = 2; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
-const startDate = '01/29/2021'; // MM/DD/YYYY
+const startDate = '01/01/2021'; // MM/DD/YYYY
 const endDate = '02/31/2021';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
