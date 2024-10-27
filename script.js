@@ -1,5 +1,5 @@
 // Leverage factor, default is 4x
-const leverage = 5;
+const leverage = 7;
 
 // Trailing Stop-Loss Percentage
 const stopLossPercentage = 0.05;
@@ -14,11 +14,11 @@ const takerFee = 0.04;
 const takerFeeDecimal = takerFee / 100; // Convert takerFee to decimal
 
 // Position type: 1 for short, 2 for long
-const positionType = 1; // Set to 1 for short, 2 for long
+const positionType = 2; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
-const startDate = '05/04/2021'; // MM/DD/YYYY
-const endDate = '06/19/2022';   // MM/DD/YYYY
+const startDate = '04/06/2021'; // MM/DD/YYYY
+const endDate = '05/07/2021';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
