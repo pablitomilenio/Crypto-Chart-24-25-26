@@ -6,7 +6,7 @@ const positionType = 1; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
 const startDate = '10/29/2021'; // MM/DD/YYYY
-const endDate = '02/15/2022';   // MM/DD/YYYY
+const endDate = '02/15/2024';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
@@ -99,8 +99,9 @@ function renderChart(data) {
             //console.log("invested: " + invested);
 
             if (positionType === 1) { // Short
-                console.log("entryPrice: " + entryPrice);
-                stopLossPrice = entryPrice * 1.10;
+                stopLossPrice = minPrice * 1.10;
+                console.log("price: " + price + " sl price: " + stopLossPrice + " slTrigger? " + stopLossTriggered);
+
                 if (price >= stopLossPrice) {
 
                     // Stop-loss triggered
