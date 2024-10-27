@@ -8,10 +8,10 @@ const stopLossPercentage = 0.05;
 const exitingPositions = true;
 
 // Binance Fees
-const makerFee = 0.02; // only for limit orders
+//const makerFee = 0.02; // only for limit orders
 const takerFee = 0.04;
 
-const sumOfFees = takerFee * 2;
+const takerFeeDecimal = takerFee / 100; // Convert takerFee to decimal
 
 // Position type: 1 for short, 2 for long
 const positionType = 1; // Set to 1 for short, 2 for long
@@ -115,6 +115,12 @@ function renderChart(data) {
                     // Stop-loss triggered
                     const profitLoss = (entryPrice - price) * numUnits;
                     cash += profitLoss;
+
+                    // Compute fee
+                    const transactionAmount = numUnits * price;
+                    const fee = transactionAmount * takerFeeDecimal;
+                    cash -= fee;
+
                     invested = false;
                     numUnits = 0;
                     stopLossTriggered = true;
@@ -131,6 +137,12 @@ function renderChart(data) {
                     // Stop-loss triggered
                     const profitLoss = (price - entryPrice) * numUnits;
                     cash += profitLoss;
+
+                    // Compute fee
+                    const transactionAmount = numUnits * price;
+                    const fee = transactionAmount * takerFeeDecimal;
+                    cash -= fee;
+
                     invested = false;
                     numUnits = 0;
                     stopLossTriggered = true;
@@ -171,6 +183,12 @@ function renderChart(data) {
                     entryPrice = price;
                     minPrice = price;
                     numUnits = (cash * leverage) / entryPrice;
+
+                    // Compute fee
+                    const transactionAmount = numUnits * entryPrice;
+                    const fee = transactionAmount * takerFeeDecimal;
+                    cash -= fee;
+
                     reinvestmentPoints.push({ date: dates[i], price: price });
                     console.log(`Re-invested (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
                     stopLossTriggered = false; // Reset the stop-loss flag
@@ -179,6 +197,12 @@ function renderChart(data) {
                     entryPrice = price;
                     maxPrice = price;
                     numUnits = (cash / entryPrice) * leverage;
+
+                    // Compute fee
+                    const transactionAmount = numUnits * entryPrice;
+                    const fee = transactionAmount * takerFeeDecimal;
+                    cash -= fee;
+
                     reinvestmentPoints.push({ date: dates[i], price: price });
                     console.log(`Re-invested (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
                     stopLossTriggered = false; // Reset the stop-loss flag
