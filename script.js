@@ -2,7 +2,10 @@
 const leverage = 3;
 
 // Trailing Stop-Loss Percentage
-const stopLossPercentage = 0.1;
+const stopLossPercentage = 0.05;
+
+// EnableExitingPositions
+const exitingPositions = true;
 
 // Position type: 1 for short, 2 for long
 const positionType = 1; // Set to 1 for short, 2 for long
@@ -101,7 +104,7 @@ function renderChart(data) {
 
             if (positionType === 1) { // Short
                 stopLossPrice = minPrice * (1 + stopLossPercentage);
-                if (price >= stopLossPrice) {
+                if (price >= stopLossPrice && exitingPositions) {
 
                     // Stop-loss triggered
                     const profitLoss = (entryPrice - price) * numUnits;
@@ -118,7 +121,7 @@ function renderChart(data) {
                 }
             } else if (positionType === 2) { // Long
                 stopLossPrice = maxPrice * (1 - stopLossPercentage);
-                if (price <= stopLossPrice) {
+                if (price <= stopLossPrice && exitingPositions) {
                     // Stop-loss triggered
                     const profitLoss = (price - entryPrice) * numUnits;
                     cash += profitLoss;
