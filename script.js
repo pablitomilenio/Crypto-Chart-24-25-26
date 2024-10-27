@@ -1,6 +1,9 @@
 // Leverage factor, default is 4x
 const leverage = 3;
 
+// Trailing Stop-Loss Percentage
+const stopLossPercentage = 0.1;
+
 // Position type: 1 for short, 2 for long
 const positionType = 1; // Set to 1 for short, 2 for long
 
@@ -97,7 +100,7 @@ function renderChart(data) {
             let stopLossPrice;
 
             if (positionType === 1) { // Short
-                stopLossPrice = minPrice * 1.10;
+                stopLossPrice = minPrice * (1 + stopLossPercentage);
                 if (price >= stopLossPrice) {
 
                     // Stop-loss triggered
@@ -114,7 +117,7 @@ function renderChart(data) {
                     continue; // Skip reinvestment in this cycle
                 }
             } else if (positionType === 2) { // Long
-                stopLossPrice = maxPrice * 0.90;
+                stopLossPrice = maxPrice * (1 - stopLossPercentage);
                 if (price <= stopLossPrice) {
                     // Stop-loss triggered
                     const profitLoss = (price - entryPrice) * numUnits;
