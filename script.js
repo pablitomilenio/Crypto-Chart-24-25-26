@@ -256,7 +256,7 @@ function renderChart(data) {
                     showLine: false,
                     datalabels: {
                         align: 'top',
-                        color: 'white',
+                        color: 'lightgray',
                         formatter: function (value, context) {
                             return value.label;
                         }
