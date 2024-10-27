@@ -7,6 +7,12 @@ const stopLossPercentage = 0.05;
 // EnableExitingPositions
 const exitingPositions = true;
 
+// Binance Fees
+const makerFee = 0.02; // only for limit orders
+const takerFee = 0.04;
+
+const sumOfFees = takerFee * 2;
+
 // Position type: 1 for short, 2 for long
 const positionType = 1; // Set to 1 for short, 2 for long
 
