@@ -1,5 +1,5 @@
 // Leverage factor, default is 4x
-const leverage = 3;
+const leverage = 5;
 
 // Trailing Stop-Loss Percentage
 const stopLossPercentage = 0.05;
