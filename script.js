@@ -100,6 +100,7 @@ function renderChart(data) {
     const reinvestmentPoints = []; // Array to hold reinvestment dates and prices
     const stopLossPoints = []; // Array to hold stop-loss trigger dates and prices
     let stopLossTriggered = false; // Track if a stop-loss has recently triggered
+    let reinvestmentCounter = 1; // Counter for reinvestment points labels
 
     for (let i = 0; i < closes.length; i++) {
         const price = closes[i];
@@ -189,9 +190,11 @@ function renderChart(data) {
                     const fee = transactionAmount * takerFeeDecimal;
                     cash -= fee;
 
-                    reinvestmentPoints.push({ date: dates[i], price: price });
+                    reinvestmentPoints.push({ date: dates[i], price: price, label: reinvestmentCounter });
                     console.log(`Re-invested (Short) on ${dates[i]} at price ${price.toFixed(2)}`);
                     stopLossTriggered = false; // Reset the stop-loss flag
+
+                    reinvestmentCounter++; // Increment the counter
                 } else if (positionType === 2 && price < prevPrice && price < nextPrice) { // Long re-invest at local min
                     invested = true;
                     entryPrice = price;
@@ -203,9 +206,11 @@ function renderChart(data) {
                     const fee = transactionAmount * takerFeeDecimal;
                     cash -= fee;
 
-                    reinvestmentPoints.push({ date: dates[i], price: price });
+                    reinvestmentPoints.push({ date: dates[i], price: price, label: reinvestmentCounter });
                     console.log(`Re-invested (Long) on ${dates[i]} at price ${price.toFixed(2)}`);
                     stopLossTriggered = false; // Reset the stop-loss flag
+
+                    reinvestmentCounter++; // Increment the counter
                 }
             }
             portfolioValues.push(cash); // No position: constant portfolio value
@@ -236,16 +241,26 @@ function renderChart(data) {
                     borderWidth: 3,
                     pointRadius: 0, // No points on the line
                     fill: false,
-                    tension: 0.1
+                    tension: 0.1,
+                    datalabels: {
+                        display: false
+                    },
                 },
                 {
                     label: 'Reinvestment Points',
-                    data: reinvestmentPoints.map(point => ({ x: point.date, y: point.price })),
+                    data: reinvestmentPoints.map(point => ({ x: point.date, y: point.price, label: point.label })),
                     yAxisID: 'y',
                     type: 'scatter',
                     pointRadius: 6,
                     pointBackgroundColor: 'green',
-                    showLine: false
+                    showLine: false,
+                    datalabels: {
+                        align: 'top',
+                        color: 'white',
+                        formatter: function (value, context) {
+                            return value.label;
+                        }
+                    }
                 },
                 {
                     label: 'Stop-Loss Points',
@@ -265,6 +280,9 @@ function renderChart(data) {
                     pointRadius: 0,
                     fill: false,
                     tension: 0.1,
+                    datalabels: {
+                        display: false
+                    },
                     segment: {
                         borderColor: ctx => {
                             const index = ctx.p0DataIndex;
@@ -367,7 +385,6 @@ function renderChart(data) {
                         }
                     }
                 },
-                // Added annotation plugin configuration
                 annotation: {
                     annotations: {
                         initialValueLine: {
@@ -390,6 +407,10 @@ function renderChart(data) {
                             }
                         }
                     }
+                },
+                // Include datalabels plugin
+                datalabels: {
+                    // Global options for datalabels if needed
                 }
             },
             interaction: {
@@ -406,8 +427,8 @@ window.onload = function () {
     const canvas = document.getElementById('myChart');
     canvas.style.backgroundColor = 'transparent';
 
-    // Register the annotation plugin
-    Chart.register(window['chartjs-plugin-annotation']);
+    // Register the annotation plugin and the datalabels plugin
+    Chart.register(window['chartjs-plugin-annotation'], window['ChartDataLabels']);
 
     readCSV(function (csvData) {
         const jsonData = parseCSV(csvData);
