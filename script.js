@@ -1,12 +1,12 @@
 // Leverage factor, default is 4x
-const leverage = 4;
+const leverage = 3;
 
 // Position type: 1 for short, 2 for long
 const positionType = 1; // Set to 1 for short, 2 for long
 
 // Define the start and end dates for filtering
-const startDate = '10/29/2021'; // MM/DD/YYYY
-const endDate = '02/15/2024';   // MM/DD/YYYY
+const startDate = '05/04/2021'; // MM/DD/YYYY
+const endDate = '06/19/2022';   // MM/DD/YYYY
 
 // Function to read and parse the CSV file
 function readCSV(callback) {
@@ -96,12 +96,8 @@ function renderChart(data) {
             // Stop-loss logic
             let stopLossPrice;
 
-            //console.log("invested: " + invested);
-
             if (positionType === 1) { // Short
                 stopLossPrice = minPrice * 1.10;
-                console.log("price: " + price + " sl price: " + stopLossPrice + " slTrigger? " + stopLossTriggered);
-
                 if (price >= stopLossPrice) {
 
                     // Stop-loss triggered
@@ -158,10 +154,7 @@ function renderChart(data) {
                 const prevPrice = closes[i - 1];
                 const nextPrice = closes[i + 1];
 
-                console.log("sl triggered")
-
                 if (positionType === 1 && price > prevPrice && price > nextPrice) { // Short re-invest at local max
-                    console.log("local maximum");
                     invested = true;
                     entryPrice = price;
                     minPrice = price;
