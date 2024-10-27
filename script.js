@@ -269,7 +269,10 @@ function renderChart(data) {
                     type: 'scatter',
                     pointRadius: 6,
                     pointBackgroundColor: 'red',
-                    showLine: false
+                    showLine: false,
+                    datalabels: {
+                        display: false
+                    },
                 },
                 {
                     label: 'Portfolio Value',
